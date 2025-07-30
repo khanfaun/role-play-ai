@@ -9,7 +9,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://role-play-ai.netlify.app',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
+
 app.use(express.json({ limit: '10mb' }));
 
 // Phục vụ các file tĩnh từ thư mục 'public'

@@ -20,30 +20,28 @@ enum Type {
  * @param payload The data to send to the Gemini API, matching the structure for generateContent.
  * @returns The text response from the API.
  */
-async function callBackend(payload: { model: string; contents: any; config?: any }): Promise<{ text: string }> {
-    try {
-        const response = await fetch('/api/generateContent', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
+const BACKEND_URL = 'https://role-play-ai.onrender.com';
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Server responded with status ${response.status}`);
-        }
+async function callBackend(payload) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/api/generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-        return await response.json();
-    } catch (error) {
-        console.error('Error calling backend:', error);
-        // Return a structured error response that the UI can display
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred.';
-        return { text: `[SYSTEM_ERROR] Lỗi kết nối đến server: ${errorMessage}` };
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Server responded with status ${response.status}`);
     }
-}
 
+    return await response.json();
+  } catch (error) {
+    console.error('Error calling backend:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred.';
+    return { text: `[SYSTEM_ERROR] Lỗi kết nối đến server: ${errorMessage}` };
+  }
+}
 
 /**
  * Tách chuỗi JSON từ văn bản thô do AI trả về.
