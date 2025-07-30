@@ -10,7 +10,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: 'https://khanfaun-role-play-ai.netlify.app/',
+  origin: 'https://khanfaun-role-play-ai.netlify.app',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
