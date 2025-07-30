@@ -1,0 +1,395 @@
+/* Responsive Styles for Mobile and Tablet */
+
+/* --- Tablet Styles (<= 1024px) --- */
+@media (max-width: 1024px) {
+  /* General */
+  html {
+    font-size: 14px;
+  }
+
+  /* Game Screen Layout */
+  .game-screen {
+    --left-sidebar-width: 220px; /* Adjust sidebar width for tablets */
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .game-sidebar-right.expanded {
+    width: 200px;
+  }
+  
+  /* Setup Screen */
+  .setup-container {
+    width: 95vw;
+    height: 95vh;
+  }
+  .setup-header {
+    padding: 1rem 1.5rem;
+  }
+  .setup-header h1 {
+    font-size: 1.5rem;
+  }
+  .setup-actions .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+  }
+  .tab-button {
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+  }
+  .tab-content {
+    padding: 1.5rem;
+  }
+  .addon-grid-items {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Modals */
+  .modal-content {
+    width: 90vw;
+    max-width: 90vw;
+  }
+  
+  .character-summary-section,
+  .character-stats-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Mobile Styles (<= 768px) --- */
+@media (max-width: 768px) {
+  html {
+    font-size: 13px;
+  }
+
+  /* Main Menu */
+  .main-menu-title {
+    font-size: 2.5rem;
+  }
+
+  /* Setup Screen */
+  .setup-header {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  .setup-header h1 {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    text-align: center;
+    font-size: 1.25rem;
+  }
+  .setup-back-button {
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: start;
+  }
+  .setup-actions {
+    grid-row: 2;
+    grid-column: 2;
+    justify-self: end;
+  }
+  .tab-nav {
+    /* Ensure tabs are on one line and fill the space without scrolling */
+    overflow-x: initial;
+    padding: 0 0.25rem;
+  }
+  .tab-nav .tab-button {
+    /* Allow buttons to shrink and text to wrap */
+    flex: 1 1 0;
+    white-space: normal;
+    text-align: center;
+    padding: 0.75rem 0.25rem;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    min-width: 0; /* Important for flex items */
+  }
+  /* Hide scrollbar since it's not used */
+  .tab-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .tab-content {
+    padding: 1rem;
+  }
+  .ai-support-columns,
+  .form-field-grid,
+  .addon-grid {
+    grid-template-columns: 1fr;
+  }
+  .author-style-input {
+    max-width: 100%;
+  }
+  
+  /* Game Screen Layout */
+  .game-screen {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-overlay {
+    display: block; /* Override desktop's display: none */
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 39; /* Below sidebar (z-index: 40) */
+    animation: fadeIn 0.3s ease;
+  }
+
+  .game-main-content {
+    border-radius: 0;
+    border: none;
+    height: 100%;
+    padding-bottom: 70px; /* Space for bottom toolbar */
+  }
+
+  /* Left Sidebar as Drawer */
+  .game-sidebar-left {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+    width: 280px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    background-color: var(--brand-surface) !important; /* Override glassmorphism for solid bg */
+  }
+  .game-sidebar-left.expanded {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+  .game-sidebar-left.collapsed {
+    width: 280px; /* Keep width for transition */
+    transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  /* Hide sidebar content when collapsed on mobile */
+  .game-sidebar-left.collapsed > * {
+    visibility: hidden;
+  }
+
+  .left-sidebar-toggle-button {
+    display: flex; /* Override desktop's display: none */
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    z-index: 50;
+    transform: none;
+    background: var(--brand-surface-alt);
+    border: 1px solid var(--brand-border);
+  }
+  .left-sidebar-toggle-button:hover {
+    transform: none;
+  }
+  .game-sidebar-left.expanded .left-sidebar-toggle-button {
+    /* When open, it becomes a close button */
+    left: calc(280px - 22px); /* Position it half-in, half-out */
+  }
+  .left-sidebar-toggle-button svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+
+  /* Right Sidebar as Bottom Toolbar */
+  .game-sidebar-right {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 0.5rem;
+    z-index: 30;
+    border-radius: 0;
+    border-top: 1px solid var(--brand-border);
+    min-width: 0;
+    gap: 0.25rem;
+    overflow-x: auto;
+  }
+  .game-sidebar-right.expanded,
+  .game-sidebar-right.collapsed {
+    width: 100%;
+  }
+  .toolbar-icon-wrapper:hover .toolbar-tooltip {
+    /* Tooltips should appear above the bottom bar */
+    top: auto;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 0.5rem;
+  }
+  .toolbar-toggle-button, .toolbar-label-visible, .toolbar-spacer {
+    display: none;
+  }
+  .toolbar-button, .toolbar-story-button {
+    width: 44px;
+    height: 44px;
+  }
+  .toolbar-story-button {
+    /* Reset position to be in the flex flow */
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+
+    /* Match other buttons' shape and style */
+    border-radius: var(--radius-lg);
+    border: none;
+    box-shadow: none;
+    
+    /* Keep the yellow color */
+    background-color: var(--exp-color);
+  }
+
+  /* Remove desktop-specific hover/active effects that change size/position */
+  .toolbar-story-button:hover,
+  .toolbar-story-button.active {
+    transform: none;
+  }
+  
+  .toolbar-story-button:hover {
+    filter: brightness(1.1);
+  }
+
+  .toolbar-story-button.active {
+    background-color: var(--exp-color); /* Explicitly keep it yellow */
+    filter: brightness(1.15);
+    /* Add a subtle inset shadow to indicate active state without changing size/shape */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+  }
+  .toolbar-separator {
+    height: 60%;
+    width: 1px;
+    margin: auto 0.25rem;
+  }
+
+  /* Story View */
+  .story-log {
+    padding: 1rem;
+  }
+  .story-bubble-ai, .story-bubble-player, .story-bubble-user_custom_action, .story-bubble-system {
+    max-width: 90%;
+  }
+
+  .choices-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .choices-grid .btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .input-area {
+    padding: 1rem;
+  }
+  .custom-action-container {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .custom-action-form {
+    width: 100%;
+    order: 2;
+  }
+  .turn-counter {
+    order: 1;
+  }
+
+  /* Modals */
+  .modal-content {
+    width: 95vw;
+    height: 85vh;
+  }
+  .modal-body {
+    padding: 1rem;
+  }
+  .view-header {
+    padding: 1rem 1.25rem;
+    font-size: 1.25rem;
+  }
+
+  /* Inventory Modal */
+  .inventory-layout {
+    flex-direction: column;
+    padding: 0.5rem;
+    gap: 1rem;
+  }
+  .inventory-filters-sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 150px; /* Make it scrollable if too many filters */
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .filter-group {
+    flex-basis: 45%;
+    flex-grow: 1;
+  }
+  .inventory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 1rem;
+  }
+  .inventory-item-frame-wrapper, .item-frame, .empty-item-frame {
+    width: 80px;
+    height: 80px;
+  }
+  .item-icon { font-size: 2rem; }
+  .star-row { height: 0.8rem; }
+  .star-row span { font-size: 0.6rem; }
+  .inventory-item-name {
+    font-size: 0.75rem;
+    max-width: 80px;
+  }
+
+  /* Equipment Modal */
+  .equipment-modal {
+    padding: 1rem;
+  }
+  .equipment-item-display {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  .item-details {
+    width: 100%;
+  }
+  .equipment-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Character Sheet */
+  .character-sheet-modal-v2 {
+    flex-direction: column;
+    padding: 0.5rem;
+  }
+  .character-sheet-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--brand-border);
+    padding: 0.5rem;
+  }
+  .character-sheet-content {
+    padding-right: 0.5rem;
+  }
+
+  /* Lore View */
+  .view-filters {
+    padding: 1rem;
+  }
+
+  /* Relationships View */
+  .relationship-grid {
+    grid-template-columns: 1fr;
+  }
+}
