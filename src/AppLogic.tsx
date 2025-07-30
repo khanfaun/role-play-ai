@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, ChangeEvent, useEffect } from 'react';
 import { GameState, GameScreen, GameSetupData, StoryEntry, ActiveView, ViewState, TooltipState, EntityType, Item, Equipment, EquipmentSlot, Character, World, Stats, ActiveEffect, QualityLabels, Quest, Skill, InitialSkill, Recipe, StorySummaryEntry, Location, InitialNPC, InitialLocation, InitialFaction } from './types';
 import { getInitialGameState, INITIAL_STATS, getInitialEquipment, ALL_AVATAR_TAGS, SYSTEM_HEAVENLY_RULES } from './constants';
@@ -24,7 +22,6 @@ const parseStatsBonus = (bonusString?: string): Partial<Stats> => {
     return bonus;
 };
 
-// Helper to apply bonuses to a stats object
 const applyStatsBonus = (stats: Stats, bonus: Partial<Stats>): Stats => {
     const newStats = { ...stats };
     for (const key in bonus) {
@@ -36,7 +33,6 @@ const applyStatsBonus = (stats: Stats, bonus: Partial<Stats>): Stats => {
     return newStats;
 };
 
-// Helper to remove bonuses from a stats object
 const removeStatsBonus = (stats: Stats, bonus: Partial<Stats>): Stats => {
     const newStats = { ...stats };
     for (const key in bonus) {
@@ -49,7 +45,6 @@ const removeStatsBonus = (stats: Stats, bonus: Partial<Stats>): Stats => {
 };
 
 const calculateTheoreticalStats = (level: number, realm: string, realmProgressionList: any[]): Partial<Stats> => {
-    // This is a placeholder implementation. A real implementation would have complex formulas.
     const baseHp = 100 + (level * 10);
     const baseMana = 50 + (level * 5);
     const baseAtk = 10 + (level * 2);
@@ -58,22 +53,26 @@ const calculateTheoreticalStats = (level: number, realm: string, realmProgressio
 
 const formatKnowledgeBaseForAI = (items: Item[]): string => {
     if (items.length === 0) return 'Chưa có vật phẩm nào được biết đến.';
-    
-    // Sort items to ensure a consistent order for the AI prompt
     const sortedItems = [...items].sort((a, b) => a.name.localeCompare(b.name));
-    
     return sortedItems.map(item => {
-        // Consolidate stats from both possible locations into one object for formatting
         const stats = item.itemType === 'Trang bị' ? item.equipmentDetails?.stats : item.stats;
-        // Consolidate effects from both possible locations
         const effects = (item.itemType === 'Trang bị' ? item.equipmentDetails?.effects : item.effects) || [];
-        
         return `- Tên Gốc: "${item.name}", Loại: "${item.itemType}/${item.type}", Độ hiếm: "${item.rarity}", Hiệu ứng: "${effects.join('; ')}", Chỉ số đã biết: "${formatStatsForAI(stats)}"`;
     }).join('\n');
-}
+};
 
+// -----------------------------
+// === THÊM QUẢN LÝ API KEY ===
+// -----------------------------
 
 const AppLogic: React.FC = () => {
+    const [userApiKey, setUserApiKey] = useState<string>(() => localStorage.getItem('userApiKey') || '');
+    // Hàm lưu userApiKey vào state + localStorage
+    const handleSaveUserApiKey = useCallback((key: string) => {
+        setUserApiKey(key);
+        localStorage.setItem('userApiKey', key);
+    }, []);
+
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [currentScreen, setCurrentScreen] = useState<GameScreen>(GameScreen.MainMenu);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -84,24 +83,21 @@ const AppLogic: React.FC = () => {
     const [newQuestNotification, setNewQuestNotification] = useState<Quest | null>(null);
     const [hasStoryStarted, setHasStoryStarted] = useState<boolean>(false);
 
-    // --- State for new features ---
     const [alchemyMaterials, setAlchemyMaterials] = useState<{ item: Item; quantity: number }[]>([]);
     const [smithingMaterials, setSmithingMaterials] = useState<{ item: Item; quantity: number }[]>([]);
     const [aiExperimentGoal, setAiExperimentGoal] = useState('');
     const [showCraftingModal, setShowCraftingModal] = useState(false);
     const [usedAvatarUrls, setUsedAvatarUrls] = useState(new Set());
-    const [predefinedAvatars, setPredefinedAvatars] = useState<any[]>([]); // Placeholder for avatar data
+    const [predefinedAvatars, setPredefinedAvatars] = useState<any[]>([]);
 
     useEffect(() => {
         if (popupMessage && popupMessage.title.includes('Thành Công')) {
             const timer = setTimeout(() => {
                 setPopupMessage(null);
-            }, 1500); // Auto-dismiss success messages
-    
-            return () => clearTimeout(timer); // Cleanup on unmount or if popup changes
+            }, 1500);
+            return () => clearTimeout(timer);
         }
     }, [popupMessage]);
-
     const handleNewGame = useCallback(() => {
         setCurrentScreen(GameScreen.Setup);
     }, []);
@@ -115,22 +111,17 @@ const AppLogic: React.FC = () => {
             try {
                 const text = e.target?.result as string;
                 if (!text) throw new Error("File rỗng.");
-                
                 let loadedData = JSON.parse(text);
 
-                // --- Validation Start ---
                 if (loadedData.initialAddons || (loadedData.world && typeof loadedData.turn === 'undefined')) {
-                     throw new Error("File không hợp lệ. Đây là file 'Thiết Lập Thế Giới', không phải file save game. Vui lòng sử dụng chức năng 'Nhập Thiết Lập Thế Giới' trong màn hình tạo cuộc phiêu lưu mới.");
+                    throw new Error("File không hợp lệ. Đây là file 'Thiết Lập Thế Giới', không phải file save game. Vui lòng sử dụng chức năng 'Nhập Thiết Lập Thế Giới' trong màn hình tạo cuộc phiêu lưu mới.");
                 }
-
                 const essentialKeys = ['character', 'world', 'turn', 'storyLog'];
                 const missingEssentialKeys = essentialKeys.filter(key => !(key in loadedData));
                 if (missingEssentialKeys.length > 0) {
                     throw new Error(`File save không hợp lệ. Thiếu các trường cốt lõi: ${missingEssentialKeys.join(', ')}.`);
                 }
-                // --- Validation End ---
 
-                // Ensure the realm name is correctly formatted upon loading the game
                 if (loadedData.character && loadedData.world) {
                     loadedData.character.realm = getRealmName(loadedData.character.stats.level, loadedData.world.realmSystem);
                 }
@@ -188,11 +179,11 @@ const AppLogic: React.FC = () => {
             }
         });
     }, []);
-    
+
+    // KHỞI TẠO GAME: luôn truyền userApiKey vào fetchSkillDetailsFromAI
     const handleGameStart = useCallback(async (setupData: GameSetupData) => {
         setIsLoading(true);
         try {
-            // Step 1: Create Character & World
             const character: Character = {
                 ...setupData.character,
                 stats: { ...INITIAL_STATS },
@@ -201,36 +192,30 @@ const AppLogic: React.FC = () => {
                 skills: [],
                 currencies: setupData.world.currencies.reduce((acc, curr) => ({ ...acc, [curr]: 0 }), {}),
             };
-
             const world: World = {
                 ...setupData.world,
                 nsfw: setupData.aiSupport.genMode === 'original' ? setupData.aiSupport.originalNsfw : setupData.aiSupport.fanficNsfw,
                 authorStyle: setupData.aiSupport.authorName,
             };
-
             const initialLevel = getLevelForRealm(character.realm, world.realmSystem);
             if (initialLevel !== null) {
                 character.stats.level = initialLevel;
             }
-
-            // Ensure the realm name is correctly formatted at the start
             character.realm = getRealmName(character.stats.level, world.realmSystem);
 
-            // Step 2: Initialize Game State
             let initialState = getInitialGameState(character, world);
             initialState.coreMemory = setupData.initialCoreMemory || [];
-            initialState.heavenlyRules = []; 
+            initialState.heavenlyRules = [];
 
-            // Step 3: Process Initial Addons
+            // Tích hợp userApiKey vào hàm gọi AI
             const detailedSkills: Skill[] = await Promise.all(
-                setupData.initialAddons.skills.map(skill => fetchSkillDetailsFromAI(skill, world.style))
+                setupData.initialAddons.skills.map(skill => fetchSkillDetailsFromAI(skill, world.style, userApiKey))
             );
             initialState.character.skills.push(...detailedSkills);
 
             setupData.initialAddons.items.forEach(initialItem => {
                 const effectsArray = (initialItem.effects || '').split(';').map(e => e.trim()).filter(Boolean);
                 const equipmentEffectsArray = (initialItem.equipmentDetails?.effects || '').split(';').map(e => e.trim()).filter(Boolean);
-
                 const newItem: Item = {
                     id: initialItem.id,
                     name: initialItem.name,
@@ -253,25 +238,20 @@ const AppLogic: React.FC = () => {
                         effects: equipmentEffectsArray
                     } : undefined,
                 };
-
                 const canEquip = newItem.requiredLevel == null || character.stats.level >= (newItem.requiredLevel || 0);
-
                 if (initialItem.isEquippedAtStart && newItem.equipmentDetails && canEquip) {
                     const slot = initialState.equipment.find(s => s.slot === newItem.equipmentDetails!.position);
                     if (slot) {
                         slot.item = newItem;
                     } else {
-                        // Failsafe if the slot somehow doesn't exist
                         initialState.inventory.push(newItem);
                     }
                 } else {
-                    // Add to inventory if not meant to be equipped, or if level requirement is not met
                     initialState.inventory.push(newItem);
                 }
-
                 addItemToKnowledgeBase(newItem, initialState);
             });
-            
+
             initialState.npcs = setupData.initialAddons.npcs.map(n => ({
                 id: n.id,
                 name: n.name,
@@ -282,7 +262,6 @@ const AppLogic: React.FC = () => {
                 relationship: 'Trung lập',
                 isDiscovered: false,
             }));
-            
             initialState.locations = setupData.initialAddons.locations.map(l => ({
                 id: l.id,
                 name: l.name,
@@ -291,7 +270,6 @@ const AppLogic: React.FC = () => {
                 region: l.region,
                 isDiscovered: false,
             }));
-
             initialState.factions = setupData.initialAddons.factions.map(f => ({
                 id: f.id,
                 name: f.name,
@@ -300,53 +278,51 @@ const AppLogic: React.FC = () => {
                 reputation: f.reputation,
                 isDiscovered: false,
             }));
-            
             initialState.lore = setupData.initialAddons.lore.map(l => ({
                 id: l.id,
                 title: l.title,
                 content: l.content,
             }));
 
-            // Step 4: Finalize and switch screen
             setGameState(initialState);
             setCurrentScreen(GameScreen.Gameplay);
             setActiveView({ type: ActiveView.Story });
-            setHasStoryStarted(false); // Story will start after user clicks button
-
+            setHasStoryStarted(false);
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Đã có lỗi không xác định xảy ra.';
             setPopupMessage({ title: 'Lỗi Bắt Đầu Game', content: `Không thể bắt đầu game. Lỗi: ${errorMessage}` });
         } finally {
             setIsLoading(false);
         }
-    }, []);
-
+    }, [userApiKey]);
+    // BẮT ĐẦU CÂU CHUYỆN ĐẦU TIÊN: gọi callGeminiAPI và generateSummary phải truyền userApiKey
     const handleStartInitialStory = useCallback(async () => {
         if (!gameState) return;
-    
+
         setIsLoading(true);
         try {
             const detailedSkills: Skill[] = gameState.character.skills.map(s => ({
                 ...s,
                 id: s.id ?? String(Date.now() + Math.random()),
-                description: s.description ?? '', // Ensure description exists
+                description: s.description ?? '',
                 type: s.type ?? 'Bị động',
                 manaCost: s.manaCost ?? 0,
                 cooldown: s.cooldown ?? 0,
                 effect: s.effect ?? '',
                 currentCooldown: 0,
             }));
-    
+
             const initialItems: Item[] = [
                 ...gameState.inventory,
                 ...gameState.equipment.map(e => e.item).filter((i): i is Item => i !== null)
             ];
-            
+
             const tempSetupData: GameSetupData = {
                 world: gameState.world,
                 character: { ...gameState.character, startingRealm: gameState.character.realm },
                 initialAddons: {
-                    skills: [], items: [],
+                    skills: [],
+                    items: [],
                     npcs: gameState.npcs.map((n): InitialNPC => ({ id: n.id, name: n.name, gender: n.gender || 'Không rõ', personality: n.personality || '', favorability: 0, realm: n.realm || '', details: n.details || '', avatarUrl: n.avatarUrl || '' })),
                     lore: gameState.lore,
                     locations: gameState.locations.map((l): InitialLocation => ({ id: l.id, name: l.name, description: l.description || '', isSafeZone: l.isSafeZone || false, region: l.region || '' })),
@@ -359,31 +335,32 @@ const AppLogic: React.FC = () => {
                 },
                 initialCoreMemory: gameState.coreMemory,
             };
-    
+
             const prompt = buildInitialPrompt(tempSetupData, detailedSkills, initialItems);
-    
-            const { story, choices, tags } = await callGeminiAPI(prompt);
-            const summaryText = await generateSummary(story);
-    
+
+            // Truyền userApiKey vào các hàm AI
+            const { story, choices, tags } = await callGeminiAPI(prompt, userApiKey);
+            const summaryText = await generateSummary(story, userApiKey);
+
             const newEntry: StoryEntry = { id: Date.now(), type: 'ai', text: story, tags };
-    
+
             setGameState(prevState => {
                 if (!prevState) return null;
                 let updatedState = applyTagsToState(tags, prevState);
-                
+
                 const textAndChoices = story + ' ' + choices.join(' ');
                 const { newState: discoveredState, discovered } = discoverEntitiesFromText(textAndChoices, updatedState);
                 updatedState = discoveredState;
-    
+
                 const discoveryMessages: StoryEntry[] = discovered.map(d => ({
                     id: Date.now() + Math.random(),
                     type: 'system',
                     text: `[Hệ thống] Bạn đã có dữ liệu về ${d.type}: ${d.name}`
                 }));
-    
+
                 const newSummaryEntry: StorySummaryEntry = { id: Date.now() + 1, turn: 1, summary: summaryText };
                 const newLog = [...updatedState.storyLog, newEntry, ...discoveryMessages];
-    
+
                 return {
                     ...updatedState,
                     storyLog: newLog,
@@ -393,15 +370,16 @@ const AppLogic: React.FC = () => {
                 };
             });
             setHasStoryStarted(true);
-    
+
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Đã có lỗi không xác định xảy ra.';
             setPopupMessage({ title: 'Lỗi Bắt Đầu Game', content: `Không thể bắt đầu câu chuyện. Lỗi: ${errorMessage}` });
         } finally {
             setIsLoading(false);
         }
-    }, [gameState]);
+    }, [gameState, userApiKey]);
 
+    // XỬ LÝ HÀNH ĐỘNG NGƯỜI CHƠI: truyền userApiKey khi gọi AI
     const processPlayerAction = useCallback(async (action: string, stateToUse?: GameState) => {
         const currentState = stateToUse || gameState;
         if (!currentState) return;
@@ -417,16 +395,15 @@ const AppLogic: React.FC = () => {
             }
             return `AI: "${entry.text}"`;
         }).join('\n');
-        
+
         const totalStats = calculateTotalStats(currentState.character, currentState.equipment);
 
         const discoveredNpcs = currentState.npcs.filter(npc => npc.isDiscovered);
         const npcContext = discoveredNpcs.length > 0
             ? discoveredNpcs.map(npc => `- ${npc.name} (Giới tính: ${npc.gender || 'Không rõ'}, Cảnh giới: ${npc.realm || 'Chưa rõ'}, Tính cách: ${npc.personality || 'Chưa rõ'})`).join('\n')
             : 'Chưa gặp NPC nào.';
-        
-        const systemRulesString = SYSTEM_HEAVENLY_RULES.map(r => `        - ${r}`).join('\n');
 
+        const systemRulesString = SYSTEM_HEAVENLY_RULES.map(r => `        - ${r}`).join('\n');
         const creationRules = `
 **QUY TẮC TẠO DỮ LIỆU MỚI (CỰC KỲ QUAN TRỌNG):**
 - Khi ngươi giới thiệu một NPC, địa điểm, phe phái, hoặc tri thức MỚI LẦN ĐẦU TIÊN trong truyện, ngươi BẮT BUỘC phải sử dụng thẻ lệnh tương ứng để tạo dữ liệu cho nó.
@@ -471,76 +448,66 @@ ${systemRulesString}
             3.  Kết thúc bằng 4 lựa chọn hành động mới cho người chơi.
         `;
 
-        const { story, choices, tags } = await callGeminiAPI(prompt);
-        
+        const { story, choices, tags } = await callGeminiAPI(prompt, userApiKey);
+
         let summaryText = '';
         if (currentState.turn > 0 && (currentState.turn + 1) % 5 === 0) {
             const combinedTextForSummary = currentState.storyLog.slice(-4).map(e => e.text).join(' ') + ' ' + story;
-            summaryText = await generateSummary(combinedTextForSummary);
+            summaryText = await generateSummary(combinedTextForSummary, userApiKey);
         }
-        
+
         setGameState(prevState => {
             const baseState = stateToUse || prevState;
             if (!baseState) return null;
-
             let workingState = JSON.parse(JSON.stringify(baseState));
             const isSystemAction = action.startsWith('[Hành động hệ thống]');
-
             if (!isSystemAction) {
                 const userEntry: StoryEntry = { id: Date.now(), type: 'player', text: action };
                 workingState.storyLog.push(userEntry);
             }
-            
             let newState = applyTagsToState(tags, workingState);
-
             const textAndChoices = story + ' ' + choices.join(' ');
             const { newState: discoveredState, discovered } = discoverEntitiesFromText(textAndChoices, newState);
             newState = discoveredState;
-
             const discoveryMessages: StoryEntry[] = discovered.map(d => ({
                 id: Date.now() + Math.random(),
                 type: 'system',
                 text: `[Hệ thống] Bạn đã có dữ liệu về ${d.type}: ${d.name}`
             }));
-
             const aiEntry: StoryEntry = { id: Date.now() + 1, type: 'ai', text: story, tags };
-            
             newState.storyLog.push(aiEntry, ...discoveryMessages);
             newState.currentChoices = choices;
             newState.turn += 1;
-
             if (summaryText) {
                 const newSummaryEntry: StorySummaryEntry = { id: Date.now() + 1, turn: newState.turn, summary: summaryText };
                 newState.storySummaries = [newSummaryEntry, ...newState.storySummaries];
             }
-            
             return newState;
         });
-
         setIsLoading(false);
-    }, [gameState]);
+    }, [gameState, userApiKey]);
 
     const handlePlayerAction = useCallback((action: string, sourceType: 'choice' | 'custom') => {
         if (isLoading || !gameState) return;
         processPlayerAction(action);
     }, [isLoading, gameState, processPlayerAction]);
-    
-    // --- ITEM & EQUIPMENT HANDLERS ---
+
+        // --- ITEM & EQUIPMENT HANDLERS ---
     const handleUseItem = useCallback((item: Item, quantity: number) => {
         const currentState = gameState;
         if (!currentState || isLoading) return;
-    
+
         let newState = JSON.parse(JSON.stringify(currentState));
         const itemIndex = newState.inventory.findIndex((i: Item) => i.id === item.id);
-        
+
         if (itemIndex === -1 || newState.inventory[itemIndex].quantity < quantity) {
             setPopupMessage({ title: 'Lỗi', content: `Không thể sử dụng ${item.name}. Không đủ số lượng.` });
             return;
         }
-    
+
         const itemToUse = newState.inventory[itemIndex];
         let totalStatsApplied: Partial<Stats> = {};
-        
+
         for (let i = 0; i < quantity; i++) {
             if (itemToUse.stats && (!itemToUse.duration || itemToUse.duration <= 0)) {
                 Object.entries(itemToUse.stats).forEach(([key, value]) => {
@@ -570,12 +537,12 @@ ${systemRulesString}
                 }
             }
         }
-        
+
         itemToUse.quantity -= quantity;
         if (itemToUse.quantity <= 0) {
             newState.inventory.splice(itemIndex, 1);
         }
-        
+
         newState.storyLog.push({ id: Date.now(), type: 'system', text: `[Hệ thống] Bạn đã sử dụng ${quantity} x ${item.name}.` });
         if (Object.keys(totalStatsApplied).length > 0) {
             const statsLog = Object.entries(totalStatsApplied)
@@ -590,12 +557,12 @@ ${systemRulesString}
                 newState.storyLog.push({ id: Date.now() + 1, type: 'system', text: `[Hệ thống] ${statsLog}.` });
             }
         }
-    
+
         newState = postProcessGameState(newState);
-        
+
         setPopupMessage({ title: 'Vật phẩm đã dùng', content: `Bạn đã sử dụng ${quantity} x ${item.name}.` });
         setActiveView({ type: ActiveView.Story });
-    
+
         let effectsDescription = '';
         if (item.stats && Object.keys(item.stats).length > 0) {
             effectsDescription = `Hiệu ứng: ${formatStatsForAI(item.stats)}.`;
@@ -604,40 +571,40 @@ ${systemRulesString}
             effectsDescription += ` Kéo dài trong ${item.duration} lượt.`;
         }
         const actionText = `[Hành động hệ thống] Người chơi vừa sử dụng ${quantity} x "${item.name}". ${effectsDescription}. Hãy mô tả lại hành động này và những gì xảy ra tiếp theo. Không cần dùng tag [ITEM_USED] hay [STATS_UPDATE] nữa vì hệ thống đã tự xử lý.`;
-        
+
         processPlayerAction(actionText, newState);
-    
+
     }, [gameState, isLoading, processPlayerAction]);
 
     const handleDropItem = useCallback((item: Item, quantity: number) => {
         if (!gameState) return;
-    
+
         const currentItem = gameState.inventory.find(i => i.id === item.id);
         if (!currentItem) return;
-    
+
         const dropAmount = Math.min(quantity, currentItem.quantity);
-    
+
         setGameState(prevState => {
             if (!prevState) return null;
             const newState = JSON.parse(JSON.stringify(prevState));
             const itemIndex = newState.inventory.findIndex((i: Item) => i.id === item.id);
             if (itemIndex === -1) return newState;
-    
+
             const invItem = newState.inventory[itemIndex];
             invItem.quantity -= dropAmount;
-    
+
             if (invItem.quantity <= 0) {
                 newState.inventory.splice(itemIndex, 1);
             }
-    
+
             newState.storyLog.push({ id: Date.now(), type: 'system', text: `[Hệ thống] Bạn đã vứt bỏ ${dropAmount} x ${item.name}.` });
             return newState;
         });
-    
+
         setPopupMessage({ title: 'Vật phẩm đã vứt', content: `Bạn đã vứt bỏ ${dropAmount} x ${item.name}.` });
         setActiveView({ type: ActiveView.Story });
     }, [gameState]);
-    
+
     const handleRenameItem = (itemId: number, newName: string) => {
         setGameState(prevState => {
             if (!prevState) return null;
@@ -650,25 +617,25 @@ ${systemRulesString}
 
     const handleEquipItem = useCallback((item: Item) => {
         if (!gameState || !item.equipmentDetails) return;
-    
+
         if (item.requiredLevel && gameState.character.stats.level < item.requiredLevel) {
             setPopupMessage({ title: 'Không thể trang bị', content: `Cảnh giới không đủ để trang bị ${item.name}.` });
             return;
         }
-    
+
         setGameState(prevState => {
             if (!prevState) return null;
             let newState = JSON.parse(JSON.stringify(prevState));
-            
+
             const itemToEquip = item;
             const targetSlotName = itemToEquip.equipmentDetails!.position;
-    
+
             const targetSlot = newState.equipment.find((s: Equipment) => s.slot === targetSlotName);
             if (!targetSlot) return newState;
-    
+
             const itemIndexInInventory = newState.inventory.findIndex((i: Item) => i.id === itemToEquip.id);
             if (itemIndexInInventory === -1) return newState;
-    
+
             if (targetSlot.item) {
                 const oldItem = targetSlot.item;
                 const existingInInventory = newState.inventory.find((i: Item) => i.name === oldItem.name);
@@ -678,66 +645,66 @@ ${systemRulesString}
                     newState.inventory.push({ ...oldItem, quantity: 1 });
                 }
             }
-    
+
             targetSlot.item = { ...itemToEquip, quantity: 1 };
-    
+
             const invItem = newState.inventory[itemIndexInInventory];
             if (invItem.quantity > 1) {
                 invItem.quantity -= 1;
             } else {
                 newState.inventory.splice(itemIndexInInventory, 1);
             }
-    
+
             newState.storyLog.push({ id: Date.now(), type: 'system', text: `[Hệ thống] Bạn đã trang bị ${itemToEquip.name}.` });
-    
+
             return postProcessGameState(newState);
         });
-    
+
         setPopupMessage({ title: 'Trang bị', content: `Bạn đã trang bị ${item.name}.` });
         setActiveView({ type: ActiveView.Story });
     }, [gameState]);
 
     const handleUnequipItem = useCallback((slot: EquipmentSlot) => {
         if (!gameState) return;
-    
+
         const targetSlot = gameState.equipment.find((s: Equipment) => s.slot === slot);
         const itemName = targetSlot?.item?.name;
-    
+
         if (!itemName) return;
-    
+
         setGameState(prevState => {
             if (!prevState) return null;
             let newState = JSON.parse(JSON.stringify(prevState));
             const targetSlotInState = newState.equipment.find((s: Equipment) => s.slot === slot);
             if (!targetSlotInState || !targetSlotInState.item) return newState;
-    
+
             const itemToUnequip = targetSlotInState.item;
-            
+
             const existingInInventory = newState.inventory.find((i: Item) => i.name === itemToUnequip.name);
             if (existingInInventory) {
                 existingInInventory.quantity += 1;
             } else {
                 newState.inventory.push({ ...itemToUnequip, quantity: 1 });
             }
-    
+
             targetSlotInState.item = null;
-    
+
             newState.storyLog.push({ id: Date.now(), type: 'system', text: `[Hệ thống] Bạn đã tháo ${itemToUnequip.name}.` });
-    
+
             return postProcessGameState(newState);
         });
-    
+
         setPopupMessage({ title: 'Tháo trang bị', content: `Bạn đã tháo ${itemName}.` });
         setActiveView({ type: ActiveView.Story });
     }, [gameState]);
 
 
-    // --- TOOLTIP HANDLERS ---
+       // --- TOOLTIP HANDLERS ---
     const handleShowTooltip = useCallback((type: EntityType, entityName: string, position: { x: number; y: number; }) => {
         if (!gameState) return;
         let entity: any = null;
 
-        const findEntity = (collection: any[], nameKey: string, name: string) => 
+        const findEntity = (collection: any[], nameKey: string, name: string) =>
             collection.find(e => e[nameKey].toLowerCase() === name.toLowerCase());
 
         switch (type) {
@@ -767,7 +734,7 @@ ${systemRulesString}
 
         if (entity) {
             const tooltipWidth = 320;
-            const tooltipHeight = 250; // Estimate
+            const tooltipHeight = 250;
             const newPos = {
                 left: position.x + tooltipWidth > window.innerWidth ? position.x - tooltipWidth - 10 : position.x + 10,
                 top: position.y + tooltipHeight > window.innerHeight ? position.y - tooltipHeight - 10 : position.y + 10,
@@ -793,7 +760,7 @@ ${systemRulesString}
             return { ...prevState, quests: newQuests };
         });
     }, []);
-    
+
     const handleDeclineQuest = useCallback((questId: number) => {
         setGameState(prevState => {
             if (!prevState) return null;
@@ -802,7 +769,6 @@ ${systemRulesString}
         });
     }, []);
 
-    // For the new quest modal
     const handleAcceptNewQuest = useCallback((questId: number) => {
         handleAcceptQuest(questId);
         setNewQuestNotification(null);
@@ -817,7 +783,7 @@ ${systemRulesString}
         setNewQuestNotification(null);
     }, []);
 
-    // --- MANAGEMENT HANDLERS (JOURNAL, CORE MEMORY, ETC.) ---
+    // --- JOURNAL, CORE MEMORY, LOCATION, SUMMARY HANDLERS ---
     const handleUpdateHeavenlyRules = (rules: string[]) => {
         setGameState(prevState => prevState ? { ...prevState, heavenlyRules: rules } : null);
     };
@@ -852,17 +818,15 @@ ${systemRulesString}
             return { ...prevState, locations: newLocations };
         });
     };
-    
 
+    // --- ADD TO KNOWLEDGE BASE ---
     const addItemToKnowledgeBase = (itemToAdd: Item, state: GameState) => {
         const qualityLabel = Object.values(QualityLabels).find(label => itemToAdd.name.startsWith(label + ' '));
         let baseName = itemToAdd.name;
         if (qualityLabel) {
             baseName = itemToAdd.name.substring(qualityLabel.length).trim();
         }
-
         const existingItemIndex = state.knowledgeBase.items.findIndex(i => i.name.toLowerCase() === baseName.toLowerCase());
-
         if (existingItemIndex === -1) {
             const cleanItem: Item = {
                 ...JSON.parse(JSON.stringify(itemToAdd)),
@@ -870,10 +834,9 @@ ${systemRulesString}
                 quantity: 1,
             };
             state.knowledgeBase.items.push(cleanItem);
-            state.knowledgeBase.items.sort((a,b) => a.name.localeCompare(b.name));
+            state.knowledgeBase.items.sort((a, b) => a.name.localeCompare(b.name));
         }
     };
-
 
     return (
         <AppUI
@@ -915,6 +878,8 @@ ${systemRulesString}
             onDeleteLocation={handleDeleteLocation}
             hasStoryStarted={hasStoryStarted}
             onStartStory={handleStartInitialStory}
+            userApiKey={userApiKey}
+            onSaveUserApiKey={handleSaveUserApiKey}
         />
     );
 };
