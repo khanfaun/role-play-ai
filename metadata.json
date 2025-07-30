@@ -1,0 +1,6 @@
+{
+  "name": "Game Role Play Ai",
+  "description": "Một ứng dụng nhập vai văn bản (text-based RPG) tương tác, nơi AI đóng vai trò là Người Kể Chuyện và Quản Trò (Game Master - GM). AI sáng tác truyện và điều khiển logic game thông qua hệ thống 'thẻ lệnh' chuyên dụng.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
