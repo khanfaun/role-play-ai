@@ -1,15 +1,11 @@
-/* Responsive Styles for Mobile and Tablet */
-
 /* --- Tablet Styles (<= 1024px) --- */
 @media (max-width: 1024px) {
-  /* General */
   html {
     font-size: 14px;
   }
 
-  /* Game Screen Layout */
   .game-screen {
-    --left-sidebar-width: 220px; /* Adjust sidebar width for tablets */
+    --left-sidebar-width: 220px;
     padding: 1rem;
     gap: 1rem;
   }
@@ -18,7 +14,6 @@
     width: 200px;
   }
   
-  /* Setup Screen */
   .setup-container {
     width: 95vw;
     height: 95vh;
@@ -44,7 +39,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* Modals */
   .modal-content {
     width: 90vw;
     max-width: 90vw;
@@ -91,21 +85,18 @@
     justify-self: end;
   }
   .tab-nav {
-    /* Ensure tabs are on one line and fill the space without scrolling */
     overflow-x: initial;
     padding: 0 0.25rem;
   }
   .tab-nav .tab-button {
-    /* Allow buttons to shrink and text to wrap */
     flex: 1 1 0;
     white-space: normal;
     text-align: center;
     padding: 0.75rem 0.25rem;
     font-size: 0.8rem;
     line-height: 1.3;
-    min-width: 0; /* Important for flex items */
+    min-width: 0;
   }
-  /* Hide scrollbar since it's not used */
   .tab-nav::-webkit-scrollbar {
     display: none;
   }
@@ -121,27 +112,61 @@
     max-width: 100%;
   }
   
-  /* Game Screen Layout */
+  /* Game Screen Layout - Mobile */
   .game-screen {
     padding: 0;
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    min-height: 0;
   }
 
   .mobile-overlay {
-    display: block; /* Override desktop's display: none */
+    display: block;
     position: fixed;
     inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 39; /* Below sidebar (z-index: 40) */
+    z-index: 39;
     animation: fadeIn 0.3s ease;
   }
 
   .game-main-content {
     border-radius: 0;
     border: none;
-    height: 100%;
-    padding-bottom: 70px; /* Space for bottom toolbar */
+    height: 100vh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 0;
+    padding-bottom: 0;
+  }
+
+  .story-view-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    min-height: 0;
+    flex: 1 1 0;
+  }
+
+  .story-log {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+
+  .input-area {
+    position: sticky;
+    bottom: 60px; /* Đẩy lên vừa khít phía trên menu dưới */
+    left: 0;
+    right: 0;
+    z-index: 31;
+    background: var(--brand-surface);
+    border-top: 1px solid var(--brand-border);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+    width: 100%;
+    padding: 1rem;
   }
 
   /* Left Sidebar as Drawer */
@@ -154,25 +179,22 @@
     width: 280px;
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
-    background-color: var(--brand-surface) !important; /* Override glassmorphism for solid bg */
+    background-color: var(--brand-surface) !important;
   }
   .game-sidebar-left.expanded {
     transform: translateX(0);
     box-shadow: var(--shadow-lg);
   }
   .game-sidebar-left.collapsed {
-    width: 280px; /* Keep width for transition */
+    width: 280px;
     transform: translateX(-100%);
     box-shadow: none;
   }
-
-  /* Hide sidebar content when collapsed on mobile */
   .game-sidebar-left.collapsed > * {
     visibility: hidden;
   }
-
   .left-sidebar-toggle-button {
-    display: flex; /* Override desktop's display: none */
+    display: flex;
     position: fixed;
     top: 1rem;
     left: 1rem;
@@ -188,14 +210,12 @@
     transform: none;
   }
   .game-sidebar-left.expanded .left-sidebar-toggle-button {
-    /* When open, it becomes a close button */
-    left: calc(280px - 22px); /* Position it half-in, half-out */
+    left: calc(280px - 22px);
   }
   .left-sidebar-toggle-button svg {
     width: 1.5rem;
     height: 1.5rem;
   }
-
 
   /* Right Sidebar as Bottom Toolbar */
   .game-sidebar-right {
@@ -204,6 +224,8 @@
     left: 0;
     right: 0;
     height: 60px;
+    min-height: 60px;
+    max-height: 60px;
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
@@ -214,13 +236,26 @@
     min-width: 0;
     gap: 0.25rem;
     overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s cubic-bezier(.4,0,.2,1);
+    will-change: transform, opacity;
+  }
+   .game-sidebar-right.hide-on-scroll {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .game-sidebar-right.show-on-scroll {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
   }
   .game-sidebar-right.expanded,
   .game-sidebar-right.collapsed {
     width: 100%;
   }
   .toolbar-icon-wrapper:hover .toolbar-tooltip {
-    /* Tooltips should appear above the bottom bar */
     top: auto;
     bottom: 100%;
     left: 50%;
@@ -235,35 +270,22 @@
     height: 44px;
   }
   .toolbar-story-button {
-    /* Reset position to be in the flex flow */
     position: relative;
     bottom: auto;
     left: auto;
     transform: none;
-
-    /* Match other buttons' shape and style */
     border-radius: var(--radius-lg);
     border: none;
     box-shadow: none;
-    
-    /* Keep the yellow color */
     background-color: var(--exp-color);
-  }
-
-  /* Remove desktop-specific hover/active effects that change size/position */
-  .toolbar-story-button:hover,
-  .toolbar-story-button.active {
-    transform: none;
   }
   
   .toolbar-story-button:hover {
     filter: brightness(1.1);
   }
-
   .toolbar-story-button.active {
-    background-color: var(--exp-color); /* Explicitly keep it yellow */
+    background-color: var(--exp-color);
     filter: brightness(1.15);
-    /* Add a subtle inset shadow to indicate active state without changing size/shape */
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
   }
   .toolbar-separator {
@@ -273,9 +295,6 @@
   }
 
   /* Story View */
-  .story-log {
-    padding: 1rem;
-  }
   .story-bubble-ai, .story-bubble-player, .story-bubble-user_custom_action, .story-bubble-system {
     max-width: 90%;
   }
@@ -288,22 +307,31 @@
     padding: 0.5rem 0.75rem;
   }
   
-  .input-area {
-    padding: 1rem;
-  }
-  .custom-action-container {
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  .custom-action-form {
+    .custom-action-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem; /* hoặc 1rem tùy bạn */
     width: 100%;
-    order: 2;
   }
   .turn-counter {
-    order: 1;
+    order: 1;        /* mặc định là đầu tiên */
+    margin-right: 0.75rem; /* thêm khoảng cách với input */
+    flex-shrink: 0;  /* giữ cố định chiều rộng, không co lại */
+    font-size: 0.95em;
+    min-width: 55px; /* hoặc tùy ý */
+  }
+  .custom-action-form {
+    order: 2;
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
-  /* Modals */
   .modal-content {
     width: 95vw;
     height: 85vh;
@@ -325,7 +353,7 @@
   .inventory-filters-sidebar {
     width: 100%;
     height: auto;
-    max-height: 150px; /* Make it scrollable if too many filters */
+    max-height: 150px;
     flex-direction: row;
     flex-wrap: wrap;
   }
@@ -382,7 +410,19 @@
   .character-sheet-content {
     padding-right: 0.5rem;
   }
-
+.character-sheet-modal-v2 {
+        flex-direction: column;
+        padding: 1rem !important; /* Sử dụng padding 1rem cho mobile, đủ thoáng */
+        min-width: 0;
+        width: 100vw;
+        box-sizing: border-box;
+    }
+        .character-sheet-tab-content {
+        padding: 0.75rem 0.75rem !important;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
   /* Lore View */
   .view-filters {
     padding: 1rem;
@@ -392,4 +432,57 @@
   .relationship-grid {
     grid-template-columns: 1fr;
   }
+
+}
+/* Desktop: Gom icon menu phải vừa panel */
+@media (min-width: 769px) {
+  .game-sidebar-right {
+    padding: 0.5rem 0;             /* Giảm padding top/bottom */
+    gap: 0.1rem;                  /* Giảm gap giữa các icon */
+    align-items: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .toolbar-button,
+  .toolbar-story-button {
+    width: 2.2rem;                 /* Giảm kích thước icon (tùy chỉnh) */
+    height: 2.2rem;
+    font-size: 1.2rem;
+    min-width: 2rem;
+    min-height: 2rem;
+    margin-bottom: 0.3rem;         /* Tạo khoảng cách vừa phải giữa các icon */
+    margin-top: 0.3rem;
+  }
+  .toolbar-icon-wrapper {
+    justify-content: center;
+    align-items: center;
+  }
+  .toolbar-label-visible {
+    font-size: 0.8rem;
+  }
+  /* ---- CHỈ sửa main content (cha) ---- */
+.game-main-content,
+.view-animation-wrapper {
+  width: 100%;
+  min-width: 1440px;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0.5rem 0.5rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* ---- Các modal panel con chỉ dùng width 100% ---- */
+.inventory-content,
+.character-sheet-modal-v2,
+.equipment-modal,
+.lore-view,
+.info-list-view {
+  width: 100%;
+  padding: 0;        /* Gỡ hết padding lẻ */
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: inherit; /* Kế thừa box-sizing từ cha */
+  overflow-x: hidden;
+}
 }
